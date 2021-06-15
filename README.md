@@ -10,3 +10,5 @@
   - install dependency `pynput` with pip : `pip install pynput`
   - run the control script `python3 control.py`
   - Contol the robot with arrow keys, enter key to speed up and escape key to stop.
+
+For more background information about the project, visit [the repport (on google docs)](https://docs.google.com/document/d/1XVuAASW684ZgTcmLe7ufRhombKnfWIZ8ck3HnSP8wMI/edit?usp=sharing).
