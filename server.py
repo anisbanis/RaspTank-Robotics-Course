@@ -1,18 +1,27 @@
 import socket, threading
+import time
+from random import randrange
 
-HOST = "192.168.1.1"
+HOST = "Localhost"
 PORT = 9000
 
 commands = {"forward","backward","left","right","stop","speed"}
 controllers = {}  # robot name/ socket controller 
 robots = {} 	#robot name / socket robot 
 # connection = {socketspc : socket robot}
+bonusmalus  = ["forward","backward","left","right","stop","speed","decelerate","accelerate",]
+
+
+
+
 class ClientThread(threading.Thread):
     def __init__(self, clientAddress, clientsocket):
         threading.Thread.__init__(self)
         self.csocket = clientsocket
         print("New connection added: ", clientAddress)
-
+        self.bonus = 0
+        self.malus_time = 0
+        self.last_bonus = time.time()
     def run(self):
         print("Connection from : ", clientAddress)
         # self.csocket.send(bytes("Hi, This is from Server..",'utf-8'))
@@ -20,6 +29,7 @@ class ClientThread(threading.Thread):
         global robots
         global controllers
         currentRobotName = None
+        
         while True:
             data = self.csocket.recv(2048)
             msg = data.decode()
@@ -57,13 +67,32 @@ class ClientThread(threading.Thread):
                     if v == self.csocket:
                         currentRobotName = k
                 if (currentRobotName):
-                    print("Sending forward command to Robot:", currentRobotName)
-                    robots[currentRobotName].send(str(cmd).encode())
+                    if cmd == "speed":
+                        print("Sending forward speed command  to Robot:", currentRobotName)
+                        robots[currentRobotName].send(str(msg).encode())                 
+                    else:
+                        print("Sending forward command to Robot:", currentRobotName)
+                        robots[currentRobotName].send(str(cmd).encode())
                 else:
                     print("Controller not connected to robot ")
 
 
             ##print ("from client", msg)
+            if (controllers) :
+                print("sss")
+                if time.time() - self.last_bonus >= 20 :
+                    print("at")
+                    name = list(controllers)[randrange(0,len(controllers))]#choisir aléatoirement conrolleur
+                    cmd = bonusmalus[randrange(0,len(bonusmalus))]
+                    print(cmd)                
+                    	
+                    for n, r in robots.items():
+                        if n == name:
+                            #t_end = time.time() + 5
+                            #while time.time() < t_end:
+                            r.send(str(cmd).encode())
+                            break
+                    self.last_bonus = time.time()
 
             self.csocket.send(bytes(msg, "UTF-8"))
         print("Client at ", clientAddress, " disconnected...")
@@ -72,10 +101,19 @@ class ClientThread(threading.Thread):
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind((HOST, PORT))
+Threads = []
 print("Server started")
 print("Waiting for client request..")
+
+
+
+
 while True:
     server.listen(1)
     clientsock, clientAddress = server.accept()
     newthread = ClientThread(clientAddress, clientsock)
+    Threads.append(newthread) 
+    
     newthread.start()
+
+
